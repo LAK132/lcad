@@ -1,0 +1,3 @@
+#ifndef GIT_TAG
+#define GIT_TAG "@GIT_TAG@"
+#endif
