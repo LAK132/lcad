@@ -2,6 +2,7 @@
 
 #define LAK_BASIC_PROGRAM_MAIN   main
 #define LAK_BASIC_PROGRAM_PREFIX basic_
+#define LAK_BASIC_PROGRAM_IMGUI_WINDOW_IMPL
 #include "lak/basic_program.inl"
 
 #include "lak/file.hpp"
@@ -77,27 +78,25 @@ lak::optional<int> basic_window_preinit(int argc, char **argv)
 
 void basic_window_init(lak::window &window)
 {
+	ASSERT_EQUAL(window.graphics(), lak::graphics_mode::OpenGL);
+
 	lak::debugger.crash_path = lak::fs::current_path() / "crash-log.txt";
 	lak::debugger.live_output_enabled = true;
-
-	imgui_context = ImGui::ImplCreateContext(window.graphics());
-	ImGui::ImplInit();
-	ImGui::ImplInitContext(imgui_context, window);
 
 	ImGuiStyle &style      = ImGui::GetStyle();
 	style.AntiAliasedLines = false;
 	style.AntiAliasedFill  = false;
 	style.WindowRounding   = 0.0f;
 
-	ImGui::GetIO().ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
-	ImGui::StyleColorsDark();
-	ImGui::GetStyle().WindowRounding = 0;
+	LAK_BASIC_PROGRAM(imgui_main_window_flags) =
+	  ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoScrollbar |
+	  ImGuiWindowFlags_MenuBar | ImGuiWindowFlags_NoSavedSettings |
+	  ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoMove |
+	  ImGuiWindowFlags_NoBackground;
 }
 
 void basic_window_handle_event(lak::window &, lak::event &event)
 {
-	ImGui::ImplProcessEvent(imgui_context, event);
-
 	switch (event.type)
 	{
 		//
@@ -106,33 +105,7 @@ void basic_window_handle_event(lak::window &, lak::event &event)
 
 void basic_window_loop(lak::window &window, uint64_t counter_delta)
 {
-	const float frame_time = (float)counter_delta / lak::performance_frequency();
-	ImGui::ImplNewFrame(imgui_context, window, frame_time);
-
-	bool mainOpen = true;
-
-	ImGuiStyle &style = ImGui::GetStyle();
-	ImGuiIO &io       = ImGui::GetIO();
-
-	ImGui::SetNextWindowPos(ImVec2(0, 0));
-	ImGui::SetNextWindowSize(io.DisplaySize);
-	ImVec2 old_window_padding = style.WindowPadding;
-	style.WindowPadding       = ImVec2(0.0f, 0.0f);
-	if (ImGui::Begin("ImGui Test Window",
-	                 &mainOpen,
-	                 ImGuiWindowFlags_AlwaysAutoResize |
-	                   ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_MenuBar |
-	                   ImGuiWindowFlags_NoSavedSettings |
-	                   ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoMove))
-	{
-		style.WindowPadding = old_window_padding;
-
-		//
-
-		ImGui::End();
-	}
-
-	ImGui::ImplRender(imgui_context);
+	main_loop();
 }
 
 int basic_window_quit(lak::window &)
